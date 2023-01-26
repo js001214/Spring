@@ -1,0 +1,27 @@
+Create Table USERS (
+ ID VARCHAR2(8) PRIMARY KEY,
+ PASSWORD varchar2(8),
+ NAME varchar2(20),
+ ROLE varchar2(20)
+ );
+--drop table Users;
+
+insert into USERS values ('admin','1234','愿�由ъ옄','Admin');
+insert into users values ('user1','1234','�솉湲ㄹ','User');
+commit;
+select * from users;
+
+Create Table Board (
+ SEQ number(5) primary key,
+ TITLE varchar2(200),
+ WRITER varchar2(20),
+ CONTENT varchar2(2000),
+ REGDATE date default sysdate,
+ CNT number(5) default 0
+)
+
+insert into Board (seq, title, writer, content) values(1,'媛��엯�씤�궗','愿�由ъ옄','�옒遺��긽 �뱶由쎈땲�떎.' );
+
+select * from Board;
+
+commit;
