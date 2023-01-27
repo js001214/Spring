@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 
 
-@Component("appleTV")
+@Component("appleTV")	//class AppleTV를 @Component("appleTV")로 객체를 만들겠다.
 public class AppleTV implements TV {
 	
 	//@Resource(name ="speaker")		//@Resource는 @Autowired + @Qualifier 를 합친것

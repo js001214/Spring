@@ -17,13 +17,15 @@ public class TVUser {
 			//a. @ (어노테이션)을 사용할 수 있도록 설정이 필요함.
 				//applicationContext.xml : Bean 구성 파일 , 어노테이션을 사용할 수 있도록 설정 필요.
 					//<context:component-scan base-package="polimorphism05"></context:component-scan>
-			//b. 클래스위에 @Component 어노테이션을 붙여서 객체를 생성
+					//<context:component-scan base-package="com.spring"></context:component-scan>
+
+		//b. 클래스위에 @Component 어노테이션을 붙여서 객체를 생성 <== 클래스 위부에서 할당
 					// 다양한 종류의 클래스가 존재하기 때문에 클래스의 종류에 따라서 여러이름으로 어노테이션을 붙임.
 				//@Component	: 일반적인 클래스를 Bean (객체화) 생성
 				//@Service		: 비즈니스 로직을 처리하는 클래스에 Bean 생성
 				//@Repository	: 데이터 베이스 연동을 처리하는 DAO 클래스에 생성
 				//@Controller	: 사용자 요청을 Controller 클래스에 붙여주는 
-		
+				//객체를 만들때는 소문자로 만들어야 한다.
 			//c. Spring Framework에서 생성된 객체를 의존성 주입(DI)하는 어노테이션 (클래스 변수 위에 할당) // 만들어진 객체를 불러드림
 					// 클래스 내부에서 클래스 변수에 할당.
 				//@Autowired : 해당 타입의 객체를 찾아서 자동으로 할당하는 어노테이션,

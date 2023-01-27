@@ -2,7 +2,7 @@ package polimorphism05;
 
 import org.springframework.stereotype.Component;
 
-@Component("speaker2")
+@Component("speaker2") //speaker2는 SonySpeaker, Speaker을 둘다 내포한다.
 public class SonySpeaker implements Speaker {
 
 	@Override
