@@ -1,9 +1,9 @@
 package com.spring.board;
 
-import java.sql.Statement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,200 +11,203 @@ import org.springframework.stereotype.Repository;
 
 import com.spring.common.JDBCUtil;
 
-
-@Repository("boardDAO")		//Spring Framework ¿¡¼­ ÀÚµ¿À¸·Î °´Ã¼°¡ »ı¼ºµÇ¾î¼­ RAM ·Îµå 
-public class BoardDAO implements BoardService {
-	// DAO : Data Access Object :
-	// DataBase¿¡ CRUD ÇÏ´Â °´Ã¼ : Select, Insert, Update, Delete
+@Repository("boardDAO")		//Spring Framework ì—ì„œ ìë™ìœ¼ë¡œ ê°ì²´ê°€ ìƒì„±ë˜ì–´ì„œ RAM ë¡œë“œ 
+public class BoardDAO {
+	// DAO : Data Access Object : 
+	//DataBase ì— CRUD í•˜ëŠ” ê°ì²´ : Select, Insert, Update, Delete
 	
-	//1. JDBC °ü·Ã º¯¼ö¸¦ ¼±¾ğ : Connection, Statement/PreparedStatement, ResultSet
+	//1. JDBC ê´€ë ¨ ë³€ìˆ˜ë¥¼ ì„ ì–¸ : Connection, Statement/PreparedStatement, ResultSet 
 	private Connection conn = null;
-	private Statement stmt = null;
-	private PreparedStatement pstmt = null;	//ÁÖ·Î»ç¿ë
-	private ResultSet rs = null;
+	private Statement stmt = null; 
+	private PreparedStatement pstmt = null; 		//ì£¼ë¡œì‚¬ìš© 
+	private ResultSet rs = null; 
 	
+	//2. SQL ì¿¼ë¦¬ë¥¼ ë‹´ëŠ” ìƒìˆ˜ì— ë‹´ì•„ì„œ ì²˜ë¦¬, ë³€ìˆ˜ ìƒì„±í›„ í• ë‹¹ : ìƒìˆ˜ëª… : ì „ì²´ ëŒ€ë¬¸ìë¡œ ì‚¬ìš© 
+	private final String BOARD_INSERT ="insert into board(seq, title, writer, content) values( (select nvl(max(seq),0)+1 from board),?,?,?)"; 
+	private final String BOARD_UPDATE = "update board set title=?, content=? where seq=?"; 
+	private final String BOARD_DELETE ="delete board where seq=?"; 
+	private final String BOARD_GET ="select * from board where seq=?"; 		//DataBaseì˜ í…Œì´ë¸”ì—ì„œ 1ê°œì˜ ë ˆì½”ë“œë§Œ ì¶œë ¥ (ìƒì„¸ë³´ê¸°)
+	private final String BOARD_LIST ="select * from board order by seq desc"; 		//DataBaseì˜ í…Œì´ë¸”ì˜ ì—¬ëŸ¬ê°œì˜ ë ˆì½”ë“œë¥¼ LIST (ArrayList() ) 
 	
-	//2. SQL Äõ¸®¸¦ ´ã´Â »ó¼ö¿¡ ´ã¾Æ¼­ Ã³¸® º¯¼ö »ı¼ºÈÄ ÇÒ´ç : »ó¼ö¸í : ÀüÃ¼ ´ë¹®ÀÚ·Î »ç¿ë
-	private final String BOARD_INSERT = "insert into board(seq, title, write, content) values(select nvl(max(seq),0) + 1 from board,?,?,?)";
-	private final String BOARD_UPDATE = "update board set title=?, content=? where seq=?";
-	private final String BOARD_DELETE = "delete board where seq=?";
-	private final String BOARD_GET = "select * from board where seq = ?";		//DataBaseÀÇ Å×ÀÌºí¿¡¼­ 1°³ÀÇ ·¹ÄÚµå¸¸ Ãâ·Â (»ó¼¼º¸±â)
-	private final String BOARD_LIST = "select * from board order by seq desc;";		//DataBaseÀÇ Å×ÀÌºíÀÇ ¿©·¯°³ÀÇ ·¹ÄÚµå¸¦ LIST (ArrayList() )
-	//3. ¸Ş¼Òµå : 
-			//insertBoard(), updateBoard, deleteBoard(), 	<== ¸®ÅÏ °ªÀÌ ¾ø´Ù. void
-			//getBoard() : BoardDTO ¿¡ ´ã¾Æ¼­ Àü¼Û, °¡Á®¿Â ·¹ÄÚµå°¡ 1°³
-			//getBoardList() : °¢°¢ÀÇ ·¹ÄÚµå¸¦ DTO (1°³), ArrayList¿¡ DTO °´Ã¼¸¦ ´ã¾Æ¼­ ¸®ÅÏ
-	//3-1. ±Û µî·Ï Ã³¸®: insertBoard()
-	@Override
-	public void insertBoard(BoardDTO dto) {//BoardDTO¸¦ ÀÎÇ² ¹Ş´Â´Ù dto¿¡ BoardDTOÇÊµå °ªÀÌ ´Ù µé¾î°¡ÀÖ´Ù.
-		System.out.println("==> JDBC·Î insertBoard() ±â´ÉÃ³¸® - ½ÃÀÛ");
-		//Connection °´Ã¼¸¦ »ç¿ëÇØ¼­ PreparedStatement °´Ã¼ È°¼ºÈ­
+	//3. ë©”ì†Œë“œ : 
+			// insertBoard(), updateBoard(), deleteBoard(),  <== ë¦¬í„´ ê°’ì´ ì—†ë‹¤. void
+			// getBoard() : BoardDTO ì— ë‹´ì•„ì„œ ì „ì†¡ , ê°€ì ¸ì˜¨ ë ˆì½”ë“œê°€ 1ê°œ 
+			// getBoardList() : ê° ê°ì˜ ë ˆì½”ë“œë¥¼ DTO (1ê°œ) , ArrayListì— DTO ê°ì²´ë¥¼ ë‹´ì•„ì„œ ë¦¬í„´ 
+	
+	//3-1. ê¸€ ë“±ë¡ ì²˜ë¦¬ ë©”ì†Œë“œ: insertBoard() 
+	
+	public void insertBoard(BoardDTO dto) {
+		System.out.println("==> JDBCë¡œ insertBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì‹œì‘");
+		//Connection ê°ì²´ë¥¼ ì‚¬ìš©í•´ì„œ PreparedStatement ê°ì²´ í™œì„±í™” 
 		
 		try {
+			// ì˜¤ë¥˜ê°€ ë°œìƒì‹œ í”„ë¡œê·¸ë¨ì´ ì¢…ë£Œë˜ì§€ ì•Šë„ë¡ try catch ë¸”ë½ìœ¼ë¡œ ì²˜ë¦¬
 			
-			//¿À·ù°¡ ¹ß»ı½Ã ÇÁ·Î±×·¥ÀÌ Á¾·áµÇÁö¾Êµµ·Ï try catch ºí¶ôÀ¸·Î Ã³¸®
-			conn = JDBCUtil.getConnection();
-			pstmt = conn.prepareStatement(BOARD_INSERT); //board_insert ? ? ? ¿¡ °ªÀ» ³Ö´Â´Ù.
+			conn = JDBCUtil.getConnection(); 
+			pstmt = conn.prepareStatement(BOARD_INSERT); 
 			
-			// pstmtÀÇ ?¿¡ º¯¼ö°ªÀ» ÇÒ´ç.
-			pstmt.setString(1, dto.getTitle());	//getÀ¸·Î °¡Á®¿Â °ªÀ» Ã¹¹øÂ° ? ¿¡ ÇÒ´çÇÑ´Ù.
+			// pstmt ì— ? ì— ë³€ìˆ˜ê°’ì„ í• ë‹¹. 
+			pstmt.setString(1, dto.getTitle());
 			pstmt.setString(2, dto.getWriter());
-			pstmt.setString(3, dto.getContent());
+			pstmt.setString(3, dto.getContent()); 
 			
-			pstmt.executeUpdate();
+			pstmt.executeUpdate(); 
 			
+			System.out.println("==> JDBCë¡œ insertBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì™„ë£Œ");
 			
-			System.out.println("==> JDBC·Î insertBoard() ±â´ÉÃ³¸® - ¿Ï·á");
-	}	catch (Exception e) {
-		e.printStackTrace();
-		System.out.println("==> JDBC·Î insertBoard() ±â´ÉÃ³¸® - ½ÇÆĞ");
-
-	}finally {
-		JDBCUtil.close(pstmt, conn);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("==> JDBCë¡œ insertBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì‹¤íŒ¨");
+		}finally {
+			JDBCUtil.close(pstmt, conn);
+			System.out.println("ëª¨ë“  ê°ì²´ê°€ ì˜ close() ë˜ì—ˆìŠµë‹ˆë‹¤.");
+		}
 	}
-}
 	
-	//3-2. ±Û ¼öÁ¤ Ã³¸® ¸Ş¼Òµå: updateBoard()
-	@Override
+	//3-2. ê¸€ ìˆ˜ì • ì²˜ë¦¬ ë©”ì†Œë“œ: updateBoard() 
+	
 	public void updateBoard(BoardDTO dto) {
-		System.out.println("==> JDBC·Î updateBoard() ±â´ÉÃ³¸®");
+		System.out.println("==> JDBCë¡œ updateBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì‹œì‘");
 		
 		try {
-			//°´Ã¼ »ı¼º
-			conn = JDBCUtil.getConnection();
-			pstmt = conn.prepareStatement(BOARD_UPDATE);
+			//ê°ì²´ ìƒì„±
+			conn = JDBCUtil.getConnection(); 
+			pstmt = conn.prepareStatement(BOARD_UPDATE); 
 			
-			//pstmtÀÇ ?¿¡ dto¿¡¼­ ³Ñ¾î¿À´Â º¯¼ö°ª ÇÒ´ç.
+			//pstmt ì˜ ? ì— dtoì—ì„œ ë„˜ì–´ì˜¤ëŠ” ë³€ìˆ˜ê°’ í• ë‹¹. 
 			pstmt.setString(1, dto.getTitle());
 			pstmt.setString(2, dto.getContent());
 			pstmt.setInt(3, dto.getSeq());
 			
-			pstmt.executeUpdate();	//½ÇÇà
+			pstmt.executeUpdate(); 
 			
-			System.out.println("==> JDBC·Î updateBoard() ±â´ÉÃ³¸® - ¿Ï·á");
+			System.out.println("==> JDBCë¡œ updateBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì™„ë£Œ");
 			
 		}catch (Exception e) {
 			e.printStackTrace();
-			System.out.println("==> JDBC·Î updateBoard() ±â´ÉÃ³¸® - ½ÇÆĞ");
+			System.out.println("==> JDBCë¡œ updateBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì‹¤íŒ¨");
 		}finally {
-			JDBCUtil.close(pstmt, conn); //°´Ã¼ Á¾·á
+			JDBCUtil.close(pstmt, conn); 
 		}
+		
 	}
 	
-	//3-3. ±Û »èÁ¦ Ã³¸® ¸Ş¼Òµå: deleteBoard() : 
-	@Override
+	//3-3. ê¸€ ì‚­ì œ ì²˜ë¦¬ ë©”ì†Œë“œ: deleteBoard() 
+
 	public void deleteBoard(BoardDTO dto) {
-		System.out.println("==> JDBC·Î deleteBoard() ±â´ÉÃ³¸® - ½ÃÀÛ");
+		System.out.println("==> JDBCë¡œ deleteBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì‹œì‘");
 		
 		try {
-			conn = JDBCUtil.getConnection();
-			pstmt = conn.prepareStatement(BOARD_DELETE);
+			conn = JDBCUtil.getConnection(); 
+			pstmt = conn.prepareStatement(BOARD_DELETE); 
 			pstmt.setInt(1, dto.getSeq());
 			
-			pstmt.executeUpdate();
+			pstmt.executeUpdate(); 
 			
-			
-			System.out.println("==> JDBC·Î deleteBoard() ±â´ÉÃ³¸® - ¿Ï·á");
-			
+			System.out.println("==> JDBCë¡œ deleteBoard() ê¸°ëŠ¥ì²˜ë¦¬- ì™„ë£Œ");
 			
 		}catch (Exception e) {
 			e.printStackTrace();
-			System.out.println("==> JDBC·Î deleteBoard() ±â´ÉÃ³¸® - ½ÇÆĞ");
-
+			System.out.println("==> JDBCë¡œ deleteBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì‹¤íŒ¨");
 		}finally {
 			JDBCUtil.close(pstmt, conn);
-		}
+		}	
 	}
 	
-	//3-4. ±Û »ó¼¼ Á¶È¸ Ã³¸® ¸Ş¼Òµå: getBoard() : ·¹ÄÚµå 1°³¸¦ DB¿¡¼­ select ÇØ¼­ DTO °´Ã¼¿¡ ´ã¾Æ¼­ ¸®ÅÏ
-	@Override
+	//3-4. ê¸€ ìƒì„¸ ì¡°íšŒ ì²˜ë¦¬ ë©”ì†Œë“œ: getBoard() : ë ˆì½”ë“œ 1ê°œë¥¼ DBì—ì„œ select í•´ì„œ DTO ê°ì²´ì— ë‹´ì•„ì„œ ë¦¬í„´
+	
 	public BoardDTO getBoard(BoardDTO dto) {
-		System.out.println("==> JDBC·Î getBoard() ±â´ÉÃ³¸® - ½ÃÀÛ");
+		System.out.println("==> JDBCë¡œ getBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì‹œì‘");
 		
-		//¸®ÅÏÀ¸·Î µ¹·ÁÁÙ º¯¼ö ¼±¾ğ : try ºí¶ô ¹Û¿¡¼­ ¼±¾ğ
-		BoardDTO board = null;
+		//ë¦¬í„´ìœ¼ë¡œ ëŒë ¤ì¤„ ë³€ìˆ˜ ì„ ì–¸ : try ë¸”ë½ ë°–ì—ì„œ ì„ ì–¸ 
+		BoardDTO board = new BoardDTO(); 
+		
 		try {
-			//°´Ã¼ »ı¼º : Connection, PreparedStatement
-			conn = JDBCUtil.getConnection();
-			pstmt = conn.prepareStatement(BOARD_GET);
+			//ê°ì²´ ìƒì„± : Connection, PreparedStatement
+			conn = JDBCUtil.getConnection(); 
+			pstmt = conn.prepareStatement(BOARD_GET); 
 			pstmt.setInt(1, dto.getSeq());
 			
-			//DB¸¦ selectÇÑ °á°ú¸¦ rs¿¡ ÀúÀåÇÔ.
-			rs = pstmt.executeQuery();
+			//DBë¥¼ select í•œ ê²°ê³¼ë¥¼ rsì— ì €ì¥í•¨. 
+			rs = pstmt.executeQuery(); 
 			
-			//rs¿¡ ´ã±ä °ªÀ» DTO (board)¿¡ ÀúÀåÇØ¼­ ¸®ÅÏÀ¸·Î µ¹·ÁÁÜ
+			//rsì— ë‹´ê¸´ ê°’ì„ DTO (board) ì— ì €ì¥í•´ì„œ ë¦¬í„´ìœ¼ë¡œ ëŒë ¤ì¤Œ 
 			
-			if (rs.next()) { //rsÀÇ °ªÀÌ Á¸ÀçÇÑ´Ù¸é, rsÀÇ °ªÀ» DTO¿¡ ´ã¾Æ¼­ ¸®ÅÏ
+			if (rs.next()) {	//rsì˜ ê°’ì´ ì¡´ì¬í•œë‹¤ë©´ , rsì˜ ê°’ì„ DTOì— ë‹´ì•„ì„œ ë¦¬í„´
 				board.setSeq(rs.getInt("SEQ"));
 				board.setTitle(rs.getString("TITLE"));
-				board.setTitle(rs.getString("WRITE"));
+				board.setWriter(rs.getString("WRITER"));
 				board.setContent(rs.getString("CONTENT"));
 				board.setRegDate(rs.getDate("REGDATE"));
 				board.setCnt(rs.getInt("CNT"));
 				
 			}else {
-				System.out.println("·¹ÄÚµåÀÇ °á°ú°¡ ¾ø½À´Ï´Ù.");
+				System.out.println("ë ˆì½”ë“œì˜ ê²°ê³¼ê°€ ì—†ìŠµë‹ˆë‹¤. ");
 			}
 			
-			System.out.println("==> JDBC·Î getBoard() ±â´ÉÃ³¸® - ½ÃÀÛ");
+			System.out.println("==> JDBCë¡œ getBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì™„ë£Œ");
 			
 		}catch (Exception e) {
 			e.printStackTrace();
-			System.out.println("==> JDBC·Î getBoard() ±â´ÉÃ³¸® - ½ÇÆĞ");
+			System.out.println("==> JDBCë¡œ getBoard() ê¸°ëŠ¥ì²˜ë¦¬ - ì‹¤íŒ¨");
 		}finally {
-			JDBCUtil.close(rs, pstmt,conn);
+			JDBCUtil.close(rs, pstmt, conn);
 		}
 		
-		return board;
+		return board; 
 	}
 	
-	//3-5. ±Û ¸ñ·Ï Ã³¸® ¸Ş¼Òµå: getBoardList() : ¸¹Àº ·¹ÄÚµå
-	@Override
+	//3-3. ê¸€ ëª©ë¡ ì²˜ë¦¬ ë©”ì†Œë“œ: getBoardList() : ë§ì€ ë ˆì½”ë“œ 
+		// 
+	
 	public List<BoardDTO> getBoardList(BoardDTO dto) {
-		System.out.println("==> JDBC·Î getBoardList() ±â´ÉÃ³¸® - ½ÃÀÛ");
-	
-	//¸®ÅÏ µ¹·ÁÁÙ º¯¼ö ¼±¾ğ : List <= ÀÎÅÍÆäÀÌ½º,
-		//ArrayList, Vector, LinkedList <== List ÀÎÅÍÆäÀÌ½º¸¦ ±¸ÇöÇÑ Å¬·¡½º
-			//ArrayList : ½Ì±Û ¾²·¹µå È¯°æ
-			//Vector : ¸ÖÆ¼ ¾²·¹µå È¯°æ
-			//LinkedList : ÀÚÁÖ ¼öÁ¤, »èÁ¦½Ã ¼º´ÉÀÌ ºü¸§
-	List<BoardDTO> boardList = new ArrayList<BoardDTO> ();
-	BoardDTO board = null;
-	try {
-		conn = JDBCUtil.getConnection();
-		pstmt = conn.prepareStatement(BOARD_LIST);
+		System.out.println("==> JDBCë¡œ getBoardList() ê¸°ëŠ¥ì²˜ë¦¬ - ì‹œì‘");
 		
-		rs = pstmt.executeQuery();
-		if(rs.next()) {
-			do {
-				//rs¿¡¼­ °¡Á®¿Â 1°³ÀÇ ·¹ÄÚµå¸¦ board (DTO)
-				board.setSeq(rs.getInt("SEQ"));
-				board.setTitle(rs.getString("TITLE"));
-				board.setTitle(rs.getString("WRITE"));
-				board.setContent(rs.getString("CONTENT"));
-				board.setRegDate(rs.getDate("REGDATE"));
-				board.setCnt(rs.getInt("CNT"));
-				
-				//boardList : ArrayList¿¡ add ¸Ş¼Òµå¸¦  »ç¿ëÇØ¼­ board(DT))¸¦ ÀúÀå
-				boardList.add(board);
-				
-				
-			}while (rs.next());
+		//ë¦¬í„´ ëŒë ¤ì¤„ ë³€ìˆ˜ ì„ ì–¸ : List <= ì¸í„°í˜ì´ìŠ¤ , 
+			// ArrayList, Vector, LinkedList  <== List ì¸í„°í˜ì´ìŠ¤ë¥¼ êµ¬í˜„í•œ í´ë˜ìŠ¤
+				//ArrayList : ì‹±ê¸€ ì“°ë ˆë“œ í™˜ê²½, 	<== 80% 
+				//Vector : ë©€í‹°ì“°ë ˆë“œ í™˜ê²½ 
+				//LinkedList : ìì£¼ ìˆ˜ì •, ì‚­ì œì‹œ ì„±ëŠ¥ì´ ë¹ ë¥´ê²Œ ì²˜ë¦¬ë¨ 
+		
+		List<BoardDTO> boardList = new ArrayList<BoardDTO>(); 
+		BoardDTO board ; 
+		
+		try {
+			conn = JDBCUtil.getConnection(); 
+			pstmt = conn.prepareStatement(BOARD_LIST); 
 			
-		}else {
-			System.out.println("Å×ÀÌºí¿¡ ·¹ÄÚµå°¡ ºñ¾î ÀÖ½À´Ï´Ù.");
+			rs = pstmt.executeQuery(); 
+			
+			if (rs.next()) {
+				do {
+					board = new BoardDTO();
+					//rsì—ì„œ ê°€ì ¸ì˜¨ 1ê°œì˜ ë ˆì½”ë“œë¥¼ board (DTO) 
+					board.setSeq(rs.getInt("SEQ"));
+					board.setTitle(rs.getString("TITLE"));
+					board.setWriter(rs.getString("WRITER"));
+					board.setContent(rs.getString("CONTENT"));
+					board.setRegDate(rs.getDate("REGDATE"));
+					board.setCnt(rs.getInt("CNT"));
+					
+					//boardList : ArrayListì— add () ë©”ì†Œë“œë¥¼ ì‚¬ìš©í•´ì„œ board(DTO) ë¥¼ ì €ì¥
+					boardList.add(board); 
+										
+				}while (rs.next()); 			
+				
+			}else {
+				System.out.println("í…Œì´ë¸”ì— ë ˆì½”ë“œê°€ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤. ");
+			}
+			
+			System.out.println("==> JDBCë¡œ getBoardList() ê¸°ëŠ¥ì²˜ë¦¬ - ì™„ë£Œ");
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("==> JDBCë¡œ getBoardList() ê¸°ëŠ¥ì²˜ë¦¬ - ì‹¤íŒ¨");
+		}finally {
+			JDBCUtil.close(rs, pstmt, conn);
 		}
 		
-		System.out.println("==> JDBC·Î getBoardList() ±â´ÉÃ³¸® - ¿Ï·á");
-
-	}catch (Exception e) {
-		e.printStackTrace();
-		System.out.println("==> JDBC·Î getBoardList() ±â´ÉÃ³¸® - ½ÇÆĞ");
-
-	}finally {
-		JDBCUtil.close(rs, pstmt, conn);
+		return boardList; 
 	}
-	
-	return boardList;
-	}
+
 }
