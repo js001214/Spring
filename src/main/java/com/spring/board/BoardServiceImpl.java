@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 public class BoardServiceImpl implements BoardService {
 	
 	@Autowired
-	BoardDAO boardDAO;
-	
+	BoardDAO boardDAO; 
+
 	@Override
 	public void insertBoard(BoardDTO dto) {
 		boardDAO.insertBoard(dto);
@@ -29,7 +29,6 @@ public class BoardServiceImpl implements BoardService {
 	@Override
 	public BoardDTO getBoard(BoardDTO dto) {
 		return boardDAO.getBoard(dto);
-
 	}
 
 	@Override

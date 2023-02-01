@@ -44,6 +44,8 @@ public class BoardDAO {
 			// 오류가 발생시 프로그램이 종료되지 않도록 try catch 블락으로 처리
 			
 			conn = JDBCUtil.getConnection(); 
+			//BOARD_INSERT ="insert into board(seq, title, writer, content) 
+			//             values( (select nvl(max(seq),0)+1 from board),?,?,?)";
 			pstmt = conn.prepareStatement(BOARD_INSERT); 
 			
 			// pstmt 에 ? 에 변수값을 할당. 
@@ -72,6 +74,7 @@ public class BoardDAO {
 		try {
 			//객체 생성
 			conn = JDBCUtil.getConnection(); 
+			// BOARD_UPDATE = "update board set title=?, content=? where seq=?";
 			pstmt = conn.prepareStatement(BOARD_UPDATE); 
 			
 			//pstmt 의 ? 에 dto에서 넘어오는 변수값 할당. 
@@ -125,6 +128,7 @@ public class BoardDAO {
 		try {
 			//객체 생성 : Connection, PreparedStatement
 			conn = JDBCUtil.getConnection(); 
+			// BOARD_GET ="select * from board where seq=?";
 			pstmt = conn.prepareStatement(BOARD_GET); 
 			pstmt.setInt(1, dto.getSeq());
 			
@@ -174,13 +178,16 @@ public class BoardDAO {
 		
 		try {
 			conn = JDBCUtil.getConnection(); 
+			// BOARD_LIST ="select * from board order by seq desc";
 			pstmt = conn.prepareStatement(BOARD_LIST); 
 			
 			rs = pstmt.executeQuery(); 
 			
 			if (rs.next()) {
 				do {
+					//DTO 객체는 여기서 만들어야함. ( 별도의 객체에 담기게됨 )
 					board = new BoardDTO();
+					
 					//rs에서 가져온 1개의 레코드를 board (DTO) 
 					board.setSeq(rs.getInt("SEQ"));
 					board.setTitle(rs.getString("TITLE"));
